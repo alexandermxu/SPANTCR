@@ -13,4 +13,9 @@ Imports:
 	data.table,
 	dplyr,
 	ggplot2,
-	Matrix
+	Matrix,
+	methods,
+	grDevices
+Depends: 
+    R (>= 2.10)
+LazyData: true

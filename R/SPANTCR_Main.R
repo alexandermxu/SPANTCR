@@ -1,52 +1,73 @@
-# ---- SPANTCR Main Function
-
-
-# Amino acid annotations:
+#' Set CDR3Breakdown class
+#'
+#' @importClassesFrom data.table data.table
+#' @slot CloneData data.table.
+#' @slot Elements character.
+#' @slot Metric numeric.
+#' @slot Output data.table.
+#' @slot Metadata data.table.
+#'
 #' @export
-AminoAcidFilter <- data.table(AA = c("A",  "C",  "D",  "E",  "F",  "G",  "H",  "I",  "K",  "L",  "M",  "N",  "P",  "Q",  "R",  "S",  "T",  "V",  "W",  "X",  "Y",  "*"),
-                              State = c("f",  "s",  "n",  "n",  "f",  "s",  "p",  "f",  "p",  "f",  "f",  "o",  "s",  "o",  "p",  "o",  "o",  "f",  "f",  "s",  "f",  "s"),
-                              Element = c("c",  "s",  "x",  "x",  "f",  "h",  "n",  "c",  "n",  "c",  "s",  "m",  "c",  "m",  "n",  "o",  "o",  "c",  "f",  "c",  "f",  "c"),
-                              Frequency = c(0.074,0.033,0.059,0.058,0.040,0.074,0.029,0.038,0.072,0.076,0.018,0.044,0.050,0.042,0.037,0.081,0.062,0.068,0.013,0.000,0.033,0.000),
-                              Hydrophobicity = c(41,   49,   -55,  -31,  100,  0,    8,    99,   -23,  97,   74,   -28,  -46,  -10,  -14,  -5,   13,   76,   97,   0,    63,   0),
-                              Mass = c(71.04,103.1,115.03,129.04,147.07,57.02,137.06,113.08,128.09,113.08,131.04,114.04,97.05,128.06,156.1,87.03,101.05,99.07,186.08,100,163.06,100))
+#'
+CDR3Breakdown <- methods::setClass("CDR3Breakdown", slots=list(CloneData="data.table", Elements="character",
+                                                      Metric="numeric", Output="data.table",
+                                                      Metadata="data.table"))
 
 
-# TCR score functions
+#' TCR score functions
+#'
+#' @param x Vector of TCR scores
+#'
 #' @export
 ScoreFunctionExponential5 <- function(x)
 {
   5^x
 }
 
+#' TCR input score function
+#' @param x Vector of TCR scores
+#'
 #' @export
 ScoreFunctionSquared <- function(x)
 {
   x^2
 }
 
-# k-mer weight functions
-
+#' k-mer weight functions
+#' @param x Vector of TCR scores
+#'
 #' @export
 WeightFunctionLinear <- function(x)
 {
   if(x<0.5){x <- 2*x} else {x <- 2-2*x}
   x
 }
-#' INSTRUCTIONS:
-# Prepare data with the following columns: CDR3/gene(TCRA/B)/score/vgene/jgene,id (if paired)
-#' @param Data Data for input file, must have columns named CDR3/gene/score/vgene/jgene. If using paired data, must have column named id with matched numbers for paired TCRs
-#' @param Filename Name of input
-#' @param FileType Either "Paired" or "TCRA" or "TCRB"
-#' @param AAOperation
-#' @return A matrix of the infile
+
+
+#' Analyze a TCR Set
+#'
+#' Take a set of TCR CDR3s and process into a CDR3Breakdown object
+#'
+#' @param Data Datatable with columns CDR3/vgene/jgene/gene/score/id (if paired). Column gene has values "TCRA" or "TCRB". Column id has matched numbers for paired TCRA/B genes.
+#' @param Filename Name of file or data
+#' @param FileType "Paired" "TCRA" or "TCRB"
+#' @param AAOperation Column to use from object AminoAcidFilter
+#' @param TickNumber Number of bins to use, default 100
+#' @param SlidingWindowTickSize k-mer length, 1/2/3 allowed currently, default 2
+#' @param SignificanceCutoff Minimum proportion of k-mers present in each bin to be displayed, default 0.03
+#' @param ScoreFunction How to prioritize internal scoring of TCRs, default 5^score
+#' @param WeightFunction How to weight the influence of each k-mer, default linear growth/decay
+#'
+#' @return CDR3Breakdown object, data table of CDR3 composition in bins
 #' @export
+#'
 SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
                     TickNumber=100, SlidingWindowTickSize=2, SignificanceCutoff=0.03,
                     ScoreFunction=ScoreFunctionExponential5, WeightFunction=WeightFunctionLinear)
 {
 
-  Metadata <- data.table("FileName"=Filename, "FileType"=FileType, "AAMetric"=AAOperation,
-                         "Ticks"=TickNumber, "SlidingWindowTickSize"=SlidingWindowTickSize, "SignificanceCutoff"=SignificanceCutoff)
+  Metadata <- data.table::data.table("FileName"=Filename, "FileType"=FileType, "AAMetric"=AAOperation,
+                                     "Ticks"=TickNumber, "SlidingWindowTickSize"=SlidingWindowTickSize, "SignificanceCutoff"=SignificanceCutoff)
 
   Data[, score := ScoreFunction(score)]
 
@@ -61,16 +82,16 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
     Clones <- unique(PairedData[, .(TRACDR3, TRAVgene, TRAJgene, TRBCDR3, TRBVgene, TRBJgene)])
     Clones[, Index := .I]
     Clones[, HitIndex := list()]
-    Clonecopy <- copy(Clones)
+    Clonecopy <- data.table::copy(Clones)
 
     for (num in Clones$Index){
-      set(Clones, i=num, "HitIndex", list(which(PairedData$TRACDR3==Clonecopy$TRACDR3[num] & PairedData$TRAVgene==Clonecopy$TRAVgene[num] & PairedData$TRAJgene==Clonecopy$TRAJgene[num] &
-                                                  PairedData$TRBCDR3==Clonecopy$TRBCDR3[num] & PairedData$TRBVgene==Clonecopy$TRBVgene[num] & PairedData$TRBJgene==Clonecopy$TRBJgene[num])))
+      data.table::set(Clones, i=num, "HitIndex", list(which(PairedData$TRACDR3==Clonecopy$TRACDR3[num] & PairedData$TRAVgene==Clonecopy$TRAVgene[num] & PairedData$TRAJgene==Clonecopy$TRAJgene[num] &
+                                                              PairedData$TRBCDR3==Clonecopy$TRBCDR3[num] & PairedData$TRBVgene==Clonecopy$TRBVgene[num] & PairedData$TRBJgene==Clonecopy$TRBJgene[num])))
     }
-    Clonecopy <- copy(Clones)
+    Clonecopy <- data.table::copy(Clones)
 
     for (num in Clones$Index){
-      set(Clones, i=num, c("TRAScore","TRBScore"), list(sum(PairedData[Clonecopy$HitIndex[[num]]]$TRAscore),sum(PairedData[Clonecopy$HitIndex[[num]]]$TRBscore)))
+      data.table::set(Clones, i=num, c("TRAScore","TRBScore"), list(sum(PairedData[Clonecopy$HitIndex[[num]]]$TRAscore),sum(PairedData[Clonecopy$HitIndex[[num]]]$TRBscore)))
     }
 
     Clones[, Score := mean(c(TRAScore, TRBScore)), by=Index]
@@ -117,12 +138,12 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
         mapply(c,(1+seq(1/nchar(x[2]),by=1/nchar(x[2]))-1/nchar(x[2]))[c(-nchar(x[2]), -(nchar(x[2])-1))],
                (1+seq(1/nchar(x[2]),by=1/nchar(x[2]))+2/nchar(x[2]))[c(-nchar(x[2]), -(nchar(x[2])-1))],SIMPLIFY=F)))
 
-    CombinedPairedData <- data.table(CompleteSlidingWindows1=I(CompleteSlidingWindows1), CompleteSlidingPositions1=I(CompleteSlidingPositions1),
-                                     CompleteSlidingRanges1=I(CompleteSlidingRanges1),
-                                     CompleteSlidingWindows2=I(CompleteSlidingWindows2), CompleteSlidingPositions2=I(CompleteSlidingPositions2),
-                                     CompleteSlidingRanges2=I(CompleteSlidingRanges2),
-                                     CompleteSlidingWindows3=I(CompleteSlidingWindows3), CompleteSlidingPositions3=I(CompleteSlidingPositions3),
-                                     CompleteSlidingRanges3=I(CompleteSlidingRanges3))
+    CombinedPairedData <- data.table::data.table(CompleteSlidingWindows1=I(CompleteSlidingWindows1), CompleteSlidingPositions1=I(CompleteSlidingPositions1),
+                                                 CompleteSlidingRanges1=I(CompleteSlidingRanges1),
+                                                 CompleteSlidingWindows2=I(CompleteSlidingWindows2), CompleteSlidingPositions2=I(CompleteSlidingPositions2),
+                                                 CompleteSlidingRanges2=I(CompleteSlidingRanges2),
+                                                 CompleteSlidingWindows3=I(CompleteSlidingWindows3), CompleteSlidingPositions3=I(CompleteSlidingPositions3),
+                                                 CompleteSlidingRanges3=I(CompleteSlidingRanges3))
     Clones <- cbind(Clones, CombinedPairedData)
 
     SlidingWindowInput <- Clones[[paste0("CompleteSlidingWindows",SlidingWindowTickSize)]]
@@ -163,9 +184,9 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
     FineBinTicks <- seq(0, 2, by=1/TickNumber)[-(2*TickNumber+1)]+1/TickNumber/2
     FineBinLabels <- paste0("Bin", 1:(2*TickNumber))
 
-    OutputTickData <- data.table(Window=factor(), ChainsVgene=factor(), ChainsJgene=factor(),
-                                 Probability=numeric(), WeightProbability=numeric(), Tick=numeric(), Entropy=numeric(),
-                                 WeightEntropy=numeric(), Max=numeric(), WeightMax=numeric(), Origin=factor())[1:(2*(SlidingWindowTickSize*TickNumber)*nrow(Clones))]
+    OutputTickData <- data.table::data.table(Window=factor(), ChainsVgene=factor(), ChainsJgene=factor(),
+                                             Probability=numeric(), WeightProbability=numeric(), Tick=numeric(), Entropy=numeric(),
+                                             WeightEntropy=numeric(), Max=numeric(), WeightMax=numeric(), Origin=factor())[1:(2*(SlidingWindowTickSize*TickNumber)*nrow(Clones))]
 
     counter <- 1
     for(tick in 1:length(FineBinTicks))
@@ -214,7 +235,7 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
     # Input color scaling variable here -----
     ColorTickScaleInput <- LogoTickElementsOperationReindex
     ColorTickScaleNormalize <- (ColorTickScaleInput-min(ColorTickScaleInput))/(max(ColorTickScaleInput)-min(ColorTickScaleInput))*0.99+0.01
-    ColorTickScaleRampPalette <- c("#4D4D4D",colorRampPalette(c("red","white","blue"))(100))
+    ColorTickScaleRampPalette <- c("#4D4D4D",grDevices::colorRampPalette(c("red","white","blue"))(100))
     ColorTickScaleColors <- ColorTickScaleRampPalette[100*round(ColorTickScaleNormalize,2)]
 
 
@@ -227,9 +248,9 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
     OutputTickData[, SignificantOrigin := ifelse(WeightProbability < SignificanceCutoff, 0, Origin)]
     OutputTickData[, SignificantWindow := ifelse(WeightMax < SignificanceCutoff, 0, Window)]
     OutputTickData[, SignificantColor := ifelse(WeightMax < SignificanceCutoff, 0,
-                                                100*round(as.numeric((
-                                                  (Color-min(ColorTickScaleInput))/
-                                                    (max(ColorTickScaleInput)-min(ColorTickScaleInput))*0.99+0.01)),2))]
+                                                            100*round(as.numeric((
+                                                              (Color-min(ColorTickScaleInput))/
+                                                                (max(ColorTickScaleInput)-min(ColorTickScaleInput))*0.99+0.01)),2))]
 
 
     OutputTickData <- OutputTickData[!is.na(Window)]
@@ -243,15 +264,15 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
     Clones <- unique(Data[, .(CDR3, Vgene, Jgene)])
     Clones[, Index := .I]
     Clones[, HitIndex := list()]
-    Clonecopy <- copy(Clones)
+    Clonecopy <- data.table::copy(Clones)
 
     for (num in Clones$Index){
-      set(Clones, i=num, "HitIndex", list(which(Data$CDR3==Clonecopy$CDR3[num] & Data$Vgene==Clonecopy$Vgene[num] & Data$Jgene==Clonecopy$Jgene[num])))
+      data.table::set(Clones, i=num, "HitIndex", list(which(Data$CDR3==Clonecopy$CDR3[num] & Data$Vgene==Clonecopy$Vgene[num] & Data$Jgene==Clonecopy$Jgene[num])))
     }
-    Clonecopy <- copy(Clones)
+    Clonecopy <- data.table::copy(Clones)
 
     for (num in Clones$Index){
-      set(Clones, i=num, "Score", sum(Data[Clonecopy$HitIndex[[num]]]$score))
+      data.table::set(Clones, i=num, "Score", sum(Data[Clonecopy$HitIndex[[num]]]$score))
     }
 
     CompleteSlidingWindows1 <- sapply(Clones$CDR3, function(x) strsplit(x,NULL)[[1]], USE.NAMES = F)
@@ -279,12 +300,12 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
       mapply(c,(seq(1/nchar(x),by=1/nchar(x))-1/nchar(x))[c(-nchar(x), -(nchar(x)-1))],
              (seq(1/nchar(x),by=1/nchar(x))+2/nchar(x))[c(-nchar(x), -(nchar(x)-1))],SIMPLIFY=F), USE.NAMES=F)
 
-    CombinedPairedData <- data.table(CompleteSlidingWindows1=I(CompleteSlidingWindows1), CompleteSlidingPositions1=I(CompleteSlidingPositions1),
-                                     CompleteSlidingRanges1=I(CompleteSlidingRanges1),
-                                     CompleteSlidingWindows2=I(CompleteSlidingWindows2), CompleteSlidingPositions2=I(CompleteSlidingPositions2),
-                                     CompleteSlidingRanges2=I(CompleteSlidingRanges2),
-                                     CompleteSlidingWindows3=I(CompleteSlidingWindows3), CompleteSlidingPositions3=I(CompleteSlidingPositions3),
-                                     CompleteSlidingRanges3=I(CompleteSlidingRanges3))
+    CombinedPairedData <- data.table::data.table(CompleteSlidingWindows1=I(CompleteSlidingWindows1), CompleteSlidingPositions1=I(CompleteSlidingPositions1),
+                                                 CompleteSlidingRanges1=I(CompleteSlidingRanges1),
+                                                 CompleteSlidingWindows2=I(CompleteSlidingWindows2), CompleteSlidingPositions2=I(CompleteSlidingPositions2),
+                                                 CompleteSlidingRanges2=I(CompleteSlidingRanges2),
+                                                 CompleteSlidingWindows3=I(CompleteSlidingWindows3), CompleteSlidingPositions3=I(CompleteSlidingPositions3),
+                                                 CompleteSlidingRanges3=I(CompleteSlidingRanges3))
     Clones <- cbind(Clones, CombinedPairedData)
 
     # Input analysis parameter here -----
@@ -324,17 +345,15 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
     FineBinTicks <- seq(0, 1, by=1/TickNumber)[-(TickNumber+1)]+1/TickNumber/2
     FineBinLabels <- paste0("Bin", 1:TickNumber)
 
-    OutputTickData <- data.table(Window=factor(), ChainsVgene=factor(), ChainsJgene=factor(),
-                                 Probability=numeric(), WeightProbability=numeric(), Tick=numeric(), Entropy=numeric(),
-                                 WeightEntropy=numeric(), Max=numeric(), WeightMax=numeric(), Origin=factor())[1:((SlidingWindowTickSize*TickNumber)*nrow(Clones))]#1:sum(sapply(FullBinningList, function(x) sum(unlist(x))))]
+    OutputTickData <- data.table::data.table(Window=factor(), ChainsVgene=factor(), ChainsJgene=factor(),
+                                             Probability=numeric(), WeightProbability=numeric(), Tick=numeric(), Entropy=numeric(),
+                                             WeightEntropy=numeric(), Max=numeric(), WeightMax=numeric(), Origin=factor())[1:((SlidingWindowTickSize*TickNumber)*nrow(Clones))]#1:sum(sapply(FullBinningList, function(x) sum(unlist(x))))]
 
     counter <- 1
     for(tick in 1:length(FineBinTicks))
     {
       TempBinningList <- unlist(lapply(SlidingRangesInput, function(rangelist) lapply(rangelist, function(bounds) (FineBinTicks[tick] > bounds[1] & FineBinTicks[tick] < bounds[2]))))
-      # TempBinningList <- unlist(FullBinningList[[tick]])
       TempBinningWeight <- unlist(lapply(SlidingRangesInput, function(rangelist) lapply(rangelist, function(bounds) WeightFunction((FineBinTicks[tick]-bounds[1])/(bounds[2]-bounds[1])))))
-      # TempBinningWeight <- unlist(FullBinningWeight[[tick]])
       Hits <- which(TempBinningList)
       Range <- counter:(counter+length(Hits)-1)
 
@@ -383,9 +402,9 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
     OutputTickData[, SignificantOrigin := ifelse(WeightProbability < SignificanceCutoff, 0, Origin)]
     OutputTickData[, SignificantWindow := ifelse(WeightMax < SignificanceCutoff, 0, Window)]
     OutputTickData[, SignificantColor := ifelse(WeightMax < SignificanceCutoff, 0,
-                                                100*round(as.numeric((
-                                                  (Color-min(ColorTickScaleInput))/
-                                                    (max(ColorTickScaleInput)-min(ColorTickScaleInput))*0.99+0.01)),2))]
+                                                            100*round(as.numeric((
+                                                              (Color-min(ColorTickScaleInput))/
+                                                                (max(ColorTickScaleInput)-min(ColorTickScaleInput))*0.99+0.01)),2))]
 
 
 
@@ -400,5 +419,3 @@ SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
   gc()
   PairedCDR3Complete
 }
-
-
