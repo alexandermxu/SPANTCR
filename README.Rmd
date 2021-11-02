@@ -68,79 +68,79 @@ SPAN-TCR extracts the k-mers contributing to the normalized position of amino ac
 
 4. Analyze entropy using EntropyScan
   
-Each CDR3Breakdown object contains metadata, the ordering of elements, and the matrix used to rank k-mers
+Each CDR3Breakdown object contains metadata, the ordering of elements, and the matrix used to rank k-mers  
 The clone data is broken down into the subclass "CDR3Breakdown@CloneData"
 
 
-<!-- ```{r init} -->
-<!-- library(SPANTCR) -->
+```{r init}
+library(SPANTCR)
 
-<!-- SPANTCR_VDJDBCMVPaired <- SPANTCR(VDJDBCMVPairedInput, "VDJDBCMV", "Paired", "Hydrophobicity", 100, 2, 0.03, ScoreFunctionExponential5, WeightFunctionLinear) -->
+SPANTCR_VDJDBCMVPaired <- SPANTCR(VDJDBCMVPairedInput, "VDJDBCMV", "Paired", "Hydrophobicity", 100, 2, 0.03, ScoreFunctionExponential5, WeightFunctionLinear)
 
-<!-- head(SPANTCR_VDJDBCMVPaired@CloneData[,c(1:6,11,12,15,18)]) -->
+head(SPANTCR_VDJDBCMVPaired@CloneData[,c(1:6,11,12,15,18)])
 
-<!-- ``` -->
+```
 
-<!-- The TCR data is processed into the subclass "CDR3Breakdown@Output" -->
-<!-- Each row is a single clone in a single bin -->
+The TCR data is processed into the subclass "CDR3Breakdown@Output"  
+Each row is a single clone in a single bin
 
-<!-- ```{r output} -->
-<!-- head(SPANTCR_VDJDBCMVPaired@Output) -->
-<!-- ``` -->
+```{r output}
+head(SPANTCR_VDJDBCMVPaired@Output)
+```
 
-<!-- SPANTCR plots can be generated using ggplot2 -->
-<!-- Ordering output by the same AAOperation will stack bar plots appropriately -->
-<!-- The levels of factor (Window) will match the AAOperation order -->
+SPANTCR plots can be generated using ggplot2  
+Ordering output by the same AAOperation will stack bar plots appropriately  
+The levels of factor (Window) will match the AAOperation order
 
-<!-- ```{r graph} -->
-<!-- library(ggplot2) -->
+```{r graph}
+library(ggplot2)
 
-<!-- ggplot(SPANTCR_VDJDBCMVPaired@Output[order(Window)])+ -->
-<!--   geom_bar(aes(x=Tick, y=WeightProbability, fill=SignificantColor), stat="identity", width=1/100)+ -->
-<!--   theme(legend.position="none")+ -->
-<!--   scale_fill_gradientn(colors=c(alpha("#4D4D4D",0.01),"red","white","blue"), values=c(0,0.01,0.50,1))+ -->
-<!--   coord_fixed() -->
-<!-- ``` -->
+ggplot(SPANTCR_VDJDBCMVPaired@Output[order(Window)])+
+  geom_bar(aes(x=Tick, y=WeightProbability, fill=SignificantColor), stat="identity", width=1/100)+
+  theme(legend.position="none")+
+  scale_fill_gradientn(colors=c(alpha("#4D4D4D",0.01),"red","white","blue"), values=c(0,0.01,0.50,1))+
+  coord_fixed()
+```
 
-<!-- The distance between sets of CDR3s can be measured using ComparisonFunction -->
-<!-- Here we compare Levenshtein distance between VDJDBCMV Paired CDR3s and their nearest neighbor in the set -->
+The distance between sets of CDR3s can be measured using ComparisonFunction  
+Here we compare Levenshtein distance between VDJDBCMV Paired CDR3s and their nearest neighbor in the set
 
-<!-- ```{r distancecomp} -->
-<!-- CMVSelfDistance <- ComparisonFunction(SPANTCR_VDJDBCMVPaired, SPANTCR_VDJDBCMVPaired, 100, FineBinTicksPaired, BLOSUMCappedDiff, F) -->
+```{r distancecomp}
+CMVSelfDistance <- ComparisonFunction(SPANTCR_VDJDBCMVPaired, SPANTCR_VDJDBCMVPaired, 100, FineBinTicksPaired, BLOSUMCappedDiff, F)
 
-<!-- CMVSelfDistance[, SecondChain := sapply(Top5Chain, function(x) x[2])] -->
-<!-- CMVSelfDistance[, SecondChainScore := sapply(Top5CompScore, function(x) x[2])] -->
-<!-- CMVSelfDistance[, SecondChainLev := diag(adist(SecondChain, BaseCDR3))] -->
+CMVSelfDistance[, SecondChain := sapply(Top5Chain, function(x) x[2])]
+CMVSelfDistance[, SecondChainScore := sapply(Top5CompScore, function(x) x[2])]
+CMVSelfDistance[, SecondChainLev := diag(adist(SecondChain, BaseCDR3))]
 
-<!-- ggplot(CMVSelfDistance)+ -->
-<!--   geom_point(aes(x=SecondChainLev, y=SecondChainScore))+ -->
-<!--   coord_fixed() -->
+ggplot(CMVSelfDistance)+
+  geom_point(aes(x=SecondChainLev, y=SecondChainScore))+
+  coord_fixed()
 
-<!-- ``` -->
+```
 
-<!-- Entropy analysis is performed across ranges of CDR3 using EntropyScan, or in specific windows using SearchIterator -->
-<!-- EntropyScan is a wrapper for SearchIterator -->
-<!-- Entropy across the entire range of k-mers and positions is summarized in the first list element of the output -->
+Entropy analysis is performed across ranges of CDR3 using EntropyScan, or in specific windows using SearchIterator  
+EntropyScan is a wrapper for SearchIterator  
+Entropy across the entire range of k-mers and positions is summarized in the first list element of the output
 
-<!-- ```{r entropysummary} -->
-<!-- SearchBoxesPaired20 <- mapply(c, seq(0,1.9,length.out=20), seq(0.1,2,length.out=20), SIMPLIFY=F) -->
-<!-- VDJDBCMV_Entropy <- EntropyScan(SPANTCR_VDJDBCMVPaired, SearchBoxesPaired20, 0.03, FineBinTicksPaired) -->
+```{r entropysummary}
+SearchBoxesPaired20 <- mapply(c, seq(0,1.9,length.out=20), seq(0.1,2,length.out=20), SIMPLIFY=F)
+VDJDBCMV_Entropy <- EntropyScan(SPANTCR_VDJDBCMVPaired, SearchBoxesPaired20, 0.03, FineBinTicksPaired)
 
-<!-- VDJDBCMV_Entropy[[1]]$Source <- factor(VDJDBCMV_Entropy[[1]]$Source, levels=c("Base", sort(unique(VDJDBCMV_Entropy[[1]]$Source)[-1]))) -->
+VDJDBCMV_Entropy[[1]]$Source <- factor(VDJDBCMV_Entropy[[1]]$Source, levels=c("Base", sort(unique(VDJDBCMV_Entropy[[1]]$Source)[-1])))
 
-<!-- ggplot(VDJDBCMV_Entropy[[1]][Count>20])+ -->
-<!--   geom_tile(aes(x=Range, y=Source, fill=DeltaAverage))+ -->
-<!--   scale_x_discrete(breaks=c("0-0.01","1-1.01","1.99-2"), labels=c(0,1,2))+ -->
-<!--   scale_fill_gradient2(low="blue", mid="white", high="red", midpoint = 1)+ -->
-<!--   theme_dark() -->
-<!-- ``` -->
+ggplot(VDJDBCMV_Entropy[[1]][Count>20])+
+  geom_tile(aes(x=Range, y=Source, fill=DeltaAverage))+
+  scale_x_discrete(breaks=c("0-0.01","1-1.01","1.99-2"), labels=c(0,1,2))+
+  scale_fill_gradient2(low="blue", mid="white", high="red", midpoint = 1)+
+  theme_dark()
+```
 
-<!-- Individual CDR3 entropy lines for specific sets of TCRS can be plotted using data from the second list element of the output -->
+Individual CDR3 entropy lines for specific sets of TCRS can be plotted using data from the second list element of the output
 
-<!-- ```{r entropy} -->
-<!-- ggplot(VDJDBCMV_Entropy[[2]][N>10 & Range=="0.5-0.51"])+ -->
-<!--   geom_line(aes(x=Location, y=Entropy, color=Source))+ -->
-<!--   theme_bw() -->
+```{r entropy}
+ggplot(VDJDBCMV_Entropy[[2]][N>10 & Range=="0.5-0.51"])+
+  geom_line(aes(x=Location, y=Entropy, color=Source))+
+  theme_bw()
 
-<!-- ``` -->
+```
 
