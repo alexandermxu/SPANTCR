@@ -16,8 +16,11 @@ SearchIterator(base, searchterms, targetrange, ticks = FineBinTicks)
 \item{ticks}{Vector of ticks to analyze, FineBinTicks for single CDR3, FineBinTicksPaired for paired CDR3s}
 }
 \value{
-data.table object describing all k-mers contribution to entropy
+data.table object describing per-bin entropy of k-mers containing a specific k-mer (searchterms) within a specific region (targetrange)
 }
 \description{
 Checks entropy contributions for all TCRs expressing a specific motif (searchterms) in a specific range (targetrange)
+}
+\examples{
+\dontrun{SearchIterator(CDR3Breakdown, c("GG","GA"), c(0.4,0.6), FineBinTicks)}
 }

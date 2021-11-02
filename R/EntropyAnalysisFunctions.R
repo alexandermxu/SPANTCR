@@ -5,8 +5,10 @@
 #' @param targetrange Two element vector describing the lower and upper bound of CDR3 region analyzed (from 0-1)
 #' @param ticks Vector of ticks to analyze, FineBinTicks for single CDR3, FineBinTicksPaired for paired CDR3s
 #'
-#' @return data.table object describing all k-mers contribution to entropy
+#' @return data.table object describing per-bin entropy of k-mers containing a specific k-mer (searchterms) within a specific region (targetrange)
 #' @export
+#'
+#' @examples \dontrun{SearchIterator(CDR3Breakdown, c("GG","GA"), c(0.4,0.6), FineBinTicks)}
 SearchIterator <- function(base, searchterms, targetrange, ticks=FineBinTicks)
 {
   BaseEntropy <- base@Output[, mean(WeightEntropy), by=Tick]$V1
@@ -31,8 +33,10 @@ SearchIterator <- function(base, searchterms, targetrange, ticks=FineBinTicks)
 #' @param Limit Minimum frequency of k-mers to analyze in each bin, default 0.03
 #' @param ticksused Vector of ticks to analyze, FineBinTicks for single CDR3, FineBinTicksPaired for paired CDR3s
 #'
-#' @return Summarized result of function SearchIterator called on each range in Searches
+#' @return List of repeated SearchIterator outputs for each search range (Searches), and summarized data by k-mers. Summarized data describes essential k-mers and their location.
 #' @export
+#'
+#' @examples \dontrun{EntropyScan(CD3Breakdown, list(c(0.4,0.5), c(0.5,0.6)), 0.03, FineBinTicks)}
 EntropyScan <- function(Data, Searches, Limit=0.03, ticksused=FineBinTicks)
 {
   EntropySummary <- data.table::data.table()
@@ -42,12 +46,12 @@ EntropyScan <- function(Data, Searches, Limit=0.03, ticksused=FineBinTicks)
     {
       hitsinrange <- sum(table(Data@Output[Tick>range[1] & Tick<range[2]]$Window))
       targets <- which(table(Data@Output[Tick>range[1] & Tick<range[2]]$Window)>(hitsinrange*Limit))
-      output <- SearchIterator(Data, targets %>% names, range, ticksused)
+      output <- SearchIterator(Data, names(targets), range, ticksused)
       NewEntropySummary <- output[, .(Average=mean(Entropy), Count=unique(N), Range=unique(Range)), by=Source]
       EntropySummary <- rbind(EntropySummary, NewEntropySummary)
       EntropyRaw <- rbind(EntropyRaw, output)
     }
-    set(EntropySummary, j="DeltaAverage", value=max(EntropySummary$Average)-EntropySummary$Average)
+    data.table::set(EntropySummary, j="DeltaAverage", value=max(EntropySummary$Average)-EntropySummary$Average)
   }
   list(EntropySummary, EntropyRaw)
 }

@@ -29,3 +29,11 @@
 #' @format A vector of length 200:
 #'
 "FineBinTicksPaired"
+
+#' Sample data table of paired VDJDB CMV pp65 epitope data
+#'
+#' A data.table properly formatted for SPAN-TCR
+#'
+#' @format A data.table with 444 rows and 6 columns:
+#'
+"VDJDBCMVPairedInput"

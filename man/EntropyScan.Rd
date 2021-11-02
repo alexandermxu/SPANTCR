@@ -16,8 +16,11 @@ EntropyScan(Data, Searches, Limit = 0.03, ticksused = FineBinTicks)
 \item{ticksused}{Vector of ticks to analyze, FineBinTicks for single CDR3, FineBinTicksPaired for paired CDR3s}
 }
 \value{
-Summarized result of function SearchIterator called on each range in Searches
+List of repeated SearchIterator outputs for each search range (Searches), and summarized data by k-mers. Summarized data describes essential k-mers and their location.
 }
 \description{
 Checks entropy contributions for each major motif in each range window
+}
+\examples{
+\dontrun{EntropyScan(CD3Breakdown, list(c(0.4,0.5), c(0.5,0.6)), 0.03, FineBinTicks)}
 }
