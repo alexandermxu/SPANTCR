@@ -42,6 +42,8 @@ CDR3Breakdown object, data table of CDR3 composition in bins
 Take a set of TCR CDR3s and process into a CDR3Breakdown object
 }
 \examples{
-SPANTCR(VDJDBCMVPairedInput, "VDJDBCMV", "Paired", "Hydrophobicity", 100, 2, 0.03, ScoreFunctionExponential5, WeightFunctionLinear)
-SPANTCR(VDJDBCMVPairedInput[gene=="TRA"], "VDJDBCMVAlpha","TRA","Mass", 100, 2, 0.05, ScoreFunctionExponential5, WeightFunctionLinear)
+SPANTCR(VDJDBCMVPairedInput, "VDJDBCMV", "Paired", "Hydrophobicity", 100, 2,
+0.03, ScoreFunctionExponential5, WeightFunctionLinear)
+SPANTCR(VDJDBCMVPairedInput[gene=="TRA"], "VDJDBCMVAlpha","TRA","Mass", 100,
+2, 0.05, ScoreFunctionExponential5, WeightFunctionLinear)
 }

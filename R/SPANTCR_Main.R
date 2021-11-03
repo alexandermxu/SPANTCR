@@ -62,8 +62,10 @@ WeightFunctionLinear <- function(x)
 #' @export
 #'
 #' @examples
-#' SPANTCR(VDJDBCMVPairedInput, "VDJDBCMV", "Paired", "Hydrophobicity", 100, 2, 0.03, ScoreFunctionExponential5, WeightFunctionLinear)
-#' SPANTCR(VDJDBCMVPairedInput[gene=="TRA"], "VDJDBCMVAlpha","TRA","Mass", 100, 2, 0.05, ScoreFunctionExponential5, WeightFunctionLinear)
+#' SPANTCR(VDJDBCMVPairedInput, "VDJDBCMV", "Paired", "Hydrophobicity", 100, 2,
+#' 0.03, ScoreFunctionExponential5, WeightFunctionLinear)
+#' SPANTCR(VDJDBCMVPairedInput[gene=="TRA"], "VDJDBCMVAlpha","TRA","Mass", 100,
+#' 2, 0.05, ScoreFunctionExponential5, WeightFunctionLinear)
 SPANTCR <- function(Data, Filename, FileType,  AAOperation="Hydrophobicity",
                     TickNumber=100, SlidingWindowTickSize=2, SignificanceCutoff=0.03,
                     ScoreFunction=ScoreFunctionExponential5, WeightFunction=WeightFunctionLinear)

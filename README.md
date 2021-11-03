@@ -189,7 +189,7 @@ Individual CDR3 entropy lines for specific sets of TCRS can be plotted
 using data from the second list element of the output
 
 ``` r
-ggplot(VDJDBCMV_Entropy[[2]][N>10 & Range=="0.5-0.51"])+
+ggplot(VDJDBCMV_Entropy[[2]][N>10 & Range=="0.5-0.6"])+
   geom_line(aes(x=Location, y=Entropy, color=Source))+
   theme_bw()
 ```
