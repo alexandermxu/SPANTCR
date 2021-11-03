@@ -1,3 +1,7 @@
+# SPAN-TCR
+# Alex Xu
+# alex.m.xu@gmail.com
+
 #' Modified BLOSUM62 matrix.
 #'
 #' A matrix containing thresholded BLOSUM values to calculate distance between k-mers.

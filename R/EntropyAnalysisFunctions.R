@@ -1,3 +1,7 @@
+# SPAN-TCR
+# Alex Xu
+# alex.m.xu@gmail.com
+
 #' Checks entropy contributions for all TCRs expressing a specific motif (searchterms) in a specific range (targetrange)
 #'
 #' @param base CDR3Breakdown object

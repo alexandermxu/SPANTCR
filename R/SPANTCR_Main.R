@@ -1,3 +1,7 @@
+# SPAN-TCR
+# Alex Xu
+# alex.m.xu@gmail.com
+
 #' Set CDR3Breakdown class
 #'
 #' @importClassesFrom data.table data.table

@@ -14,7 +14,8 @@ knitr::opts_chunk$set(
 ```
 
 # SPANTCR
-
+### Alex Xu
+### alex.m.xu@gmail.com
 <!-- badges: start -->
 <!-- badges: end -->
 
@@ -130,7 +131,7 @@ VDJDBCMV_Entropy[[1]]$Source <- factor(VDJDBCMV_Entropy[[1]]$Source, levels=c("B
 
 ggplot(VDJDBCMV_Entropy[[1]][Count>20])+
   geom_tile(aes(x=Range, y=Source, fill=DeltaAverage))+
-  scale_x_discrete(breaks=c("0-0.01","1-1.01","1.99-2"), labels=c(0,1,2))+
+  scale_x_discrete(breaks=c("0-0.1","1-1.1","1.9-2"), labels=c(0,1,2))+
   scale_fill_gradient2(low="blue", mid="white", high="red", midpoint = 1)+
   theme_dark()
 ```
